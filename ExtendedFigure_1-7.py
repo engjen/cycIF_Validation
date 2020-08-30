@@ -289,12 +289,14 @@ for idx,(s_sample, s_path) in enumerate(d_process.items()):
 #df_result.to_csv(f'{codedir}/Metadata/{s_sample}/SNR_jenny_replicates.csv')
 '''
 
+#6 fluorescence intensity (quenching experiments
+'''
 d_process = {
     '4165NPanc':f'{codedir}/Metadata/4165NPanc',
     'NPPan4165':f'{codedir}/Metadata/NPPan4165',
     'B1640':f'{codedir}/Metadata/B1640',
     }
-#6 fluorescence intensity (quenching experiments
+
 df_result=pd.DataFrame()
 for idx,(s_sample, s_path) in enumerate(d_process.items()):
     df_img = pd.read_csv(f'{codedir}/Metadata/{s_sample}/{s_sample}_TifImage_ExposureTimes.csv',index_col=0)
@@ -313,6 +315,6 @@ for idx,(s_sample, s_path) in enumerate(d_process.items()):
         skimage.io.imsave(f'{codedir}/Figures/{s_sample}/area_of_measurement_{s_tissue}.png',arr=(a_dapi_thresh.astype('uint8')*255))
         df_result=df_result.append(df_tissue_result)
     df_result.to_csv(f'{codedir}/Metadata/{s_sample}/{s_sample}_MeanIntensityMeasurement.csv',header=True, index=True)
-
+'''
 os.chdir(codedir)
 
