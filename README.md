@@ -3,7 +3,7 @@
 
 Multiplex imaging technologies are increasingly used for single-cell phenotyping and spatial characterization of tissues; however, quantitative, reproducible analysis is a technical and computational challenge. We developed an open-source python-based image analysis tool, [mplex-image,](https://github.com/engjen/cycIF_Validation/blob/master/README.md) to achieve fully-reproducible multiplex image visualization and analysis. We deploy this tool in the accompanying Jupyter notebooks to validate specificity, sensitivity, reproducibility and normalization of the multiplex imaging platform cyclic immunofluorescence (CyCIF). 
 
-Through our work, we learned general principles of antibody staining performance, signal removal and background removal, summarized below:
+Through our work, we learned general principles of antibody staining performance, signal removal and background removal, and developed new methods, summarized below:
 
 **1. Antibody staining**
  - CyCIF method shows differences in dynamic range, but [similar signal-to-background as standard IF.](https://github.com/engjen/cycIF_Validation/blob/master/Fig1_SinglevsCyclic_analysis_44290.ipynb)
@@ -21,3 +21,8 @@ Through our work, we learned general principles of antibody staining performance
  - A single quenching of 3% H2O2 applied for 15 - 30 minutes dramatically reduced tissue autofluorescence and this ["pre-quenching" step should be performed before staining.](https://github.com/engjen/cycIF_Validation/blob/master/Fig2_Quenching_Single_Cell.ipynb)
  - Additional rounds of quenching [decrease the bright autofluorescent cells linearly](https://github.com/engjen/cycIF_Validation/blob/master/Fig2_Quenching_Single_Cell.ipynb), while most cells show little additional decrease.
  - Therefore, we recommend taking a blank image after pre-quenching and and blank image after all staining has completed, and [combining these two images (weighted by round) for autofluorescence subtraction.](https://github.com/engjen/cycIF_Validation/blob/master/Fig2_44290-146_subtractAF_scale_by_round.ipynb)
+ 
+ **4. Methods**
+ - Images published in the literature are not reproducible without documentation of ROI selection, display range, and scale; we have developed code for [reproducible image visualization.](https://github.com/engjen/cycIF_Validation/blob/master/Figure2_Image_Analysis_Visualization.ipynb)
+ - Similarly, we have code for [reproducible multi-color overlays](https://github.com/engjen/cycIF_Validation/blob/master/Figure1-3_Image_Visualization.ipynb)
+ - Finally, we share our [image processing pipeline for QC, registration, segmentation and cell-type calling.](https://gitlab.com/engje/cmif)
