@@ -1,7 +1,7 @@
 # cycIF_Validation
 *Code and data for validation of CyCIF multiplex imaging platform*
 
-Multiplex imaging technologies are increasingly used for single-cell phenotyping and spatial characterization of tissues; however, quantitative, reproducible analysis is a technical and computational challenge. We developed an open-source python-based image analysis tool, mplex-image, to achieve fully-reproducible multiplex image visualization and analysis. We deploy this tool in the accompanying Jupyter notebooks to validate specificity, sensitivity, reproducibility and normalization of the multiplex imaging platform cyclic immunofluorescence (CyCIF). 
+Multiplex imaging technologies are increasingly used for single-cell phenotyping and spatial characterization of tissues; however, quantitative, reproducible analysis is a technical and computational challenge. We developed an open-source python-based image analysis tool, [mplex-image,](https://github.com/engjen/cycIF_Validation/blob/master/README.md) to achieve fully-reproducible multiplex image visualization and analysis. We deploy this tool in the accompanying Jupyter notebooks to validate specificity, sensitivity, reproducibility and normalization of the multiplex imaging platform cyclic immunofluorescence (CyCIF). 
 
 Through our work, we learned general principles of antibody staining performance, signal removal and background removal, summarized below:
 
