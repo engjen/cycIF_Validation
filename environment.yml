@@ -1,0 +1,22 @@
+name: base
+channels:
+  - defaults
+dependencies:
+  - conda
+  - python=3.7
+  - pandas
+  - ipython
+  - scikit-image
+  - jupyterlab
+  - jupyter
+  - scikit-learn
+  - opencv
+  - tifffile
+  - umap-learn
+  - colorcet
+  - datashader
+  - bokeh
+  - holoviews
+  - matplotlib
+  - leidenalg
+prefix: /home/exacloud/tempwork/Chin_Lab/bin/miniconda3
