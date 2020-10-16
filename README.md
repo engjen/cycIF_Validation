@@ -28,3 +28,5 @@ Through our work, we learned general principles of antibody staining performance
  - Images published in the literature are not reproducible without documentation of ROI selection, display range, and scale; we have developed code for [reproducible image visualization.](https://github.com/engjen/cycIF_Validation/blob/master/Figure2_Image_Analysis_Visualization.ipynb)
  - Similarly, we have code for [reproducible multi-color overlays](https://github.com/engjen/cycIF_Validation/blob/master/Figure1-3_Image_Visualization.ipynb)
  - Finally, we share our [image processing pipeline for QC, registration, segmentation and cell-type calling.](https://gitlab.com/engje/cmif)
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/engjen/cycIF_Validation/master)
