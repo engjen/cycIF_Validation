@@ -18,6 +18,7 @@ dependencies:
  - javabridge
  - opencv
  - pip
+ - pip:
      - biotransistor
      - scanpy
      - python-bioformats
