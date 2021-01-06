@@ -11,15 +11,14 @@ import copy
 import pandas as pd
 import tifffile
 import json
+from mplex_image import visualize as viz
+from mplex_image import process
 
 #paths
 codedir = 'C:\\Users\\engje\\Documents\\Data\\PipelineExample'
 s_slide = 'BC44290-146-Scene-1'
 regdir = f'{codedir}\\44290-146_Cropped'
 
-os.chdir('..')
-from cmif.mplex_image import visualize as viz
-from cmif.mplex_image import process
 
 #load positive and intensity data
 os.chdir(codedir)
@@ -118,6 +117,5 @@ for s_marker, points in d_result.items():
 
 with open(f'TrueNegatives_CellIDs_44290-146_scaledAF_{ls_crop[0]}.json','w') as f: 
     json.dump(d_cell_result, f)
-'''
 
 os.chdir(codedir)
