@@ -23,4 +23,6 @@ dependencies:
      - scanpy
      - python-bioformats
      - napari
+     - synapseclient
+     - mplex-image
 prefix: /home/exacloud/tempwork/Chin_Lab/bin/miniconda3
