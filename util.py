@@ -1,17 +1,20 @@
 import os
 import skimage
-from skimage import io
+from skimage import io, segmentation, morphology, measure
 import numpy as np
 import tifffile
 import matplotlib as mpl
+mpl.use('agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 #import bioformats 
 import re
 import shutil
+import itertools
 from itertools import chain
-os.chdir('/home/groups/graylab_share/OMERO.rdsStore/engje/Data/cmIF/')
-from mplex_image import ometiff
+import json
+os.chdir('/home/groups/graylab_share/OMERO.rdsStore/engje/Data/mplex_image')
+import ometiff
 
 #functions
 
@@ -154,7 +157,102 @@ def array_roi_if(df_img,df_dapi,s_label='rounds',s_title='Title',tu_crop=(0,0,10
 
     return(fig,ax) 
 
+def array_img(df_img,s_xlabel='color',ls_ylabel=['rounds','exposure'],s_title='marker',tu_array=(2,4),tu_fig=(10,20),cmap='gray',d_crop={}):
+    """
+    create a grid of images
+    df_img = dataframe of images with columns having image attributes
+        and index with image names
+    s_xlabel = coumns of grid
+    ls_ylabel = y label 
+    s_title= title
 
+    """
+     
+    fig, ax = plt.subplots(tu_array[0],tu_array[1],figsize=tu_fig)
+    ax = ax.ravel()
+    for ax_num, s_index in enumerate(df_img.index):
+        s_row_label = f'{df_img.loc[s_index,ls_ylabel[0]]}\n {df_img.loc[s_index,ls_ylabel[1]]}'
+        s_col_label = df_img.loc[s_index,s_xlabel]
+        a_image=skimage.io.imread(s_index)
+        s_label_img = df_img.loc[s_index,s_title]
+        a_rescale = skimage.exposure.rescale_intensity(a_image,in_range=(0,1.5*np.quantile(a_image,0.98)))
+        if len(d_crop)!= 0:
+            tu_crop = d_crop[df_img.loc[s_index,'scene']]
+            a_rescale = a_rescale[(tu_crop[1]):(tu_crop[1]+tu_crop[3]),(tu_crop[0]):(tu_crop[0]+tu_crop[2])]
+        ax[ax_num].imshow(a_rescale,cmap=cmap)
+        ax[ax_num].set_title(s_label_img)
+        ax[ax_num].set_ylabel(s_row_label)
+        ax[ax_num].set_xlabel(f'{s_col_label}\n 0 - {int(1.5*np.quantile(a_image,0.98))}')
+    plt.tight_layout()
+    return(fig)
+
+def thresh_meanint(df_thresh,d_crop={},s_thresh='minimum',):
+    """
+    threshold, and output positive and negative mean intensity and array
+    df_thresh = dataframe of images with columns having image attributes
+        and index with image names, column with threshold values
+    d_crop = image scene and crop coordinates
+
+    """
+    d_mask = {}
+    for idx, s_index in enumerate(df_thresh.index):
+        #load image, crop, thresh
+        a_image = skimage.io.imread(s_index)
+        if len(d_crop) != 0:
+            tu_crop = d_crop[df_thresh.loc[s_index,'scene']]
+            a_image = a_image[(tu_crop[1]):(tu_crop[1]+tu_crop[3]),(tu_crop[0]):(tu_crop[0]+tu_crop[2])]
+        i_min = df_thresh.loc[s_index,s_thresh]
+        a_mask = a_image > i_min
+        print(f'mean positive intensity = {np.mean(a_image[a_mask])}')
+        df_thresh.loc[s_index,'meanpos'] = np.mean(a_image[a_mask])
+        b_mask = a_image < i_min
+        print(f'mean negative intensity = {np.mean(a_image[b_mask])}')
+        df_thresh.loc[s_index,'meanneg'] = np.mean(a_image[b_mask])
+        d_mask.update({s_index:a_mask})
+    return(df_thresh,d_mask)
+
+def quartiles(regionmask, intensity):
+    return np.percentile(intensity[regionmask], q=(5,25, 50, 75,95))
+
+def thresh_erode(df_thresh,d_crop={},s_thresh='minimum',k=10):
+    """
+    threshold, erode around pixels above threshold to obtain background,
+    and output foreground and background intensity 
+    df_thresh = dataframe of images with columns having image attributes
+        and index with image names, column with threshold values
+    d_crop = image scene and crop coordinates
+
+    """
+    d_mask = {}
+    df_all = pd.DataFrame()
+    for idx, s_index in enumerate(df_thresh.index):
+        #load image, crop, thresh
+        a_image = skimage.io.imread(s_index)
+        if len(d_crop) != 0:
+            tu_crop = d_crop[df_thresh.loc[s_index,'scene']]
+            a_image = a_image[(tu_crop[1]):(tu_crop[1]+tu_crop[3]),(tu_crop[0]):(tu_crop[0]+tu_crop[2])]
+        # generate foreground  
+        fg = a_image > df_thresh.loc[s_index,s_thresh]
+        fg = skimage.morphology.remove_small_objects(fg,min_size=120) #remove flecks
+        #generate background
+        bg = fg==0
+        bg = morphology.binary_erosion(bg, morphology.disk(30)) #30 pixels - 10 um (one cell diam)
+        bg = morphology.remove_small_objects(bg,min_size=1000)  #a couple cells in size
+        #superpixels to label
+        suppix_b = segmentation.slic(np.ones(bg.shape), n_segments=k,start_label=1)   
+        suppix_b[~bg] = 0
+        suppix_f = segmentation.slic(np.ones(bg.shape), n_segments=k,start_label=1) 
+        suppix_f[~fg] = 0
+        #measure
+        props_f = measure.regionprops_table(label_image=suppix_f,intensity_image=a_image,properties=('label','mean_intensity','centroid'),extra_properties=(quartiles,))
+        props_b = measure.regionprops_table(label_image=suppix_b,intensity_image=a_image,properties=('label','mean_intensity','centroid'),extra_properties=(quartiles,))
+        df = pd.DataFrame(props_b).merge(pd.DataFrame(props_f),on='label',suffixes=('_bg','_fg'))
+        df['marker'] = df_thresh.loc[s_index,'marker']
+        df['filename'] = s_index
+        print(f'SBR {df_thresh.loc[s_index,"marker"]} {(df.mean_intensity_fg/df.mean_intensity_bg).mean()}')
+        df_all = df_all.append(df)        
+        d_mask.update({s_index:(suppix_f,suppix_b)})
+    return(df_all,d_mask)
 
 def overlay_crop(d_combos,d_crop,df_img,s_dapi,tu_dim=(1000,1000),b_8bit=True): 
     """
