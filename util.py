@@ -341,3 +341,69 @@ def cropped_ometiff(dd_result,cropdir):
             s_xml =  ometiff.gen_xml(new_array, ls_marker)
             with tifffile.TiffWriter(f'{cropdir}/{s_crop}_{s_type}.ome.tif') as tif:
                 tif.save(new_array,  photometric = "minisblack", description=s_xml, metadata = None)
+                
+def multicolor_png(df_img,df_dapi,s_scene,d_overlay,d_crop,es_dim={'CD8','FoxP3','ER','AR'},es_bright={'Ki67','pHH3'},low_thresh=4000,high_thresh=0.999):
+    '''
+    create RGB image with Dapi plus four - 6 channels
+    '''
+
+    d_result = {}
+    #print(s_scene)
+    tu_crop = d_crop[s_scene]
+    df_slide = df_img[df_img.scene == s_scene]
+    x=tu_crop[1]
+    y=tu_crop[0]
+    img_dapi = skimage.io.imread(df_dapi[df_dapi.scene==s_scene].path[0])
+    a_crop = img_dapi[x:x+800,y:y+800]
+    a_rescale_dapi = skimage.exposure.rescale_intensity(a_crop,in_range=(np.quantile(img_dapi,0.2),1.5*np.quantile(img_dapi,high_thresh)),out_range=(0, 255))
+    if 1.5*np.quantile(img_dapi,high_thresh) < low_thresh:
+                a_rescale_dapi = skimage.exposure.rescale_intensity(a_crop,in_range=(low_thresh/2,low_thresh),out_range=(0, 255))
+    elif len(es_dim.intersection(set(['DAPI'])))==1:
+                new_thresh = float(str(high_thresh)[:-2])
+                a_rescale_dapi = skimage.exposure.rescale_intensity(a_crop,in_range=(np.quantile(img_dapi,0.2),1.5*np.quantile(img_dapi,new_thresh)),out_range=(0, 255))
+    elif len(es_bright.intersection(set(['DAPI'])))==1:
+                a_rescale_dapi = skimage.exposure.rescale_intensity(a_crop,in_range=(np.quantile(img_dapi,0.2),1.5*np.quantile(img_dapi,float(str(high_thresh) + '99'))),out_range=(0, 255))
+
+    #RGB
+    for s_type, ls_marker in d_overlay.items():
+        #print(s_type)
+        zdh = np.dstack((np.zeros_like(a_rescale_dapi), np.zeros_like(a_rescale_dapi),a_rescale_dapi))
+        for idx, s_marker in enumerate(ls_marker):
+            #print(s_marker)
+            s_index = df_slide[df_slide.marker == s_marker].index[0]
+            img = skimage.io.imread(df_slide.loc[s_index,'path'])
+            a_crop = img[x:x+800,y:y+800]
+            in_range = (np.quantile(a_crop,0.2),1.5*np.quantile(a_crop,high_thresh))
+            a_rescale = skimage.exposure.rescale_intensity(a_crop,in_range=in_range,out_range=(0, 255))
+            if 1.5*np.quantile(a_crop,high_thresh) < low_thresh:
+                #print('low thresh')
+                in_range=(low_thresh/2,low_thresh)
+                a_rescale = skimage.exposure.rescale_intensity(a_crop,in_range=in_range,out_range=(0, 255))
+            elif len(es_dim.intersection(set([s_marker])))==1:
+                #print('dim')
+                new_thresh = float(str(high_thresh)[:-2])
+                in_range=(np.quantile(a_crop,0.2),1.5*np.quantile(a_crop,new_thresh))
+                a_rescale = skimage.exposure.rescale_intensity(a_crop,in_range=in_range,out_range=(0, 255))
+            elif len(es_bright.intersection(set([s_marker])))==1:
+                #print('bright')
+                in_range=(np.quantile(a_crop,0.2),1.5*np.quantile(a_crop,float(str(high_thresh) + '99')))
+                a_rescale = skimage.exposure.rescale_intensity(a_crop,in_range=in_range,out_range=(0, 255))
+
+            #print(f'low {int(in_range[0])} high {int(in_range[1])}')
+            if idx == 0:
+                zdh = zdh + np.dstack((np.zeros_like(a_rescale), a_rescale,np.zeros_like(a_rescale)))
+
+            elif idx == 1:
+                zdh = zdh + np.dstack((a_rescale, a_rescale,np.zeros_like(a_rescale)))
+
+            elif idx == 2:
+                zdh = zdh + np.dstack((a_rescale, np.zeros_like(a_rescale),np.zeros_like(a_rescale) ))
+
+            elif idx == 3:
+                zdh = zdh + np.dstack((np.zeros_like(a_rescale), a_rescale, a_rescale))
+        #print(zdh.min())
+        zdh = zdh.clip(0,255)
+        zdh = zdh.astype('uint8')
+        #print(zdh.max())
+        d_result.update({s_type:(ls_marker,zdh)})
+    return(d_result)
